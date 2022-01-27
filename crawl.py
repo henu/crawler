@@ -8,6 +8,10 @@ import os
 import time
 
 import parser
+import robotsdb
+
+
+USER_AGENT = 'The Crawler'
 
 
 def crawl(storage_path, regex, not_regex, urls):
@@ -41,7 +45,10 @@ def crawl(storage_path, regex, not_regex, urls):
     # Initialize Selenium
     driver_options = Options()
     driver_options.add_argument('--headless')
+    driver_options.add_argument(f'user-agent={USER_AGENT}')
     driver = webdriver.Chrome(options=driver_options)
+
+    robots = robotsdb.RobotsDatabase(USER_AGENT)
 
     # Do the crawling
     try:
@@ -65,7 +72,16 @@ def crawl(storage_path, regex, not_regex, urls):
                 if not match:
                     continue
 
-            # TODO: Handle robots.txt!
+            # Check if robots database has any new URLs
+            new_urls = robots.get_new_urls()
+            for new_url in new_urls:
+                if new_url not in urls_db:
+                    urls_db[new_url] = {}
+                    unhandled_urls.append(new_url)
+
+            # Check if this URL is allowed by robots.txt
+            if not robots.is_allowed(url):
+                continue
 
             # Fetch it
             print('{:.2f} % ready: {}'.format(ready_percent, url))
