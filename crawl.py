@@ -14,6 +14,15 @@ import robotsdb
 USER_AGENT = 'The Crawler'
 
 
+def save_urls_db(urls_db, path):
+    """ Saves URLs database atomically.
+    """
+    tmp_path = path + '_TMP'
+    with open(tmp_path, 'w') as f:
+        json.dump(urls_db, f, indent=2)
+    os.rename(tmp_path, path)
+
+
 def crawl(storage_path, regex, not_regex, urls):
 
     urls_db_path = os.path.join(storage_path, 'urls.json')
@@ -33,8 +42,7 @@ def crawl(storage_path, regex, not_regex, urls):
     for url in urls:
         if url not in urls_db:
             urls_db[url] = {}
-    with open(urls_db_path, 'w') as f:
-        json.dump(urls_db, f, indent=2)
+    save_urls_db(urls_db, urls_db_path)
 
     # Make a lookup table of what URLs are unhandled
     unhandled_urls = [url for url, data in urls_db.items() if not data]
@@ -123,8 +131,7 @@ def crawl(storage_path, regex, not_regex, urls):
             urls_db[url] = url_data
 
             # TODO: Make atomic write!
-            with open(urls_db_path, 'w') as f:
-                json.dump(urls_db, f, indent=2)
+            save_urls_db(urls_db, urls_db_path)
 
     except KeyboardInterrupt:
         pass
